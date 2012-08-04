@@ -1,7 +1,6 @@
 __author__ = 'mohan'
 
 import pexpect;
-import subprocess;
 import logging;
 import logging.handlers;
 import  sys;
@@ -22,9 +21,6 @@ def init_logger():
     handler.setFormatter(formatter)
     logger.addHandler(handler);
     logger.setLevel(logging.INFO);
-
-
-
 
 
 def connect_new_ssh(child, password):

@@ -5,7 +5,6 @@ import subprocess;
 import logging;
 import logging.handlers;
 import  sys;
-import getpass
 
 
 #Logging Config
@@ -44,7 +43,7 @@ def execute_command(command):
 
 
 def sign_rpm(rpmPath, timeout=10):
-    process = pexpect.spawn("rpm --resign %s" %(rpmPath), [], timeout)
+    process = pexpect.spawn("rpm --resign %s" % (rpmPath), [], timeout)
     index = process.expect("Enter pass phrase:");
     try:
         if index == 0:
