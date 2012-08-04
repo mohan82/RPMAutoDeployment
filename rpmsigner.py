@@ -5,25 +5,31 @@ import subprocess;
 import logging;
 import logging.handlers;
 import  sys;
+import glob;
 
+#TODO:Add strict validation
 
 #Logging Config
 #
 rpm_pass_phrase = "mynameismohan";
 app_name = 'rpm_signer';
 logger = logging.getLogger(app_name);
-log_file_name = 'logs/' + app_name + ".log"
+log_file_name = '/home/mohan/logs/' + app_name + ".log"
 
 #Python functions start
 #
 
 def init_logger():
-    fiveMegFileSize = 5 * 1024 * 1024
-    handler = logging.handlers.RotatingFileHandler((log_file_name), 'a', fiveMegFileSize, 5);
+    #fiveMegFileSize = 5 * 1024 * 1024
+    #handler = logging.handlers.RotatingFileHandler((log_file_name), 'a', fiveMegFileSize, 5);
+    handler = logging.StreamHandler();
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler);
     logger.setLevel(logging.INFO);
+
+
+
 
 
 def execute_command(command):
@@ -55,16 +61,21 @@ def sign_rpm(rpmPath, timeout=10):
         logger.warn("Connection Timed out please increase the given time out " + str(timeout));
 
 
+def process_rpm(rpm_name) :
+    child = sign_rpm(rpm_name)
+    if not child is None:
+        child.expect(pexpect.EOF);
+        logger.info("End Signing RPM")
+        logger.info(child.before);
+        logger.info("Terminating Process Exiting now....")
+        child.terminate()
+
+
 def main():
     init_logger();
     try:
-        child = sign_rpm("/home/mohan/test.rpm")
-        if not child is None:
-            child.expect(pexpect.EOF);
-            logger.info("End Signing RPM")
-            logger.info(child.before);
-            logger.info("Terminating Process Exiting now....")
-            child.terminate()
+        for rpm in glob.glob(sys.argv[1] + "/*.rpm"):
+            print process_rpm(rpm);
     except  Exception as e:
         logger.error(e);
         raise;
