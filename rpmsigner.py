@@ -66,6 +66,7 @@ def process_rpm(rpm_name) :
     if not child is None:
         child.expect(pexpect.EOF);
         logger.info("End Signing RPM")
+        logger.info("Testing Signing RPM")
         logger.info(child.before);
         logger.info("Terminating Process Exiting now....")
         child.terminate()
