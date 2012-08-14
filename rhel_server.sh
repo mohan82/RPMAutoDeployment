@@ -1,10 +1,19 @@
 #!/bin/sh
 
+# This script blindly does following operations
+# 1) get all files from an apache build server,
+# 2) push all rpms from apache server them to rhel repo server
+# 3) move all the txt files from apache server to shared test folder
+#
+# It relies on the apache build server to drop correct rpms and correct
+# text files. This script is dumb enough to assume given rpms are correct
+# rpms and given text files are proper text files and process them
+
+#author:Mohan Ambalavanan
+#Date Created: 14 Aug 2012
+
 
 # Global variables
-#
-#
-
 TMP_FOLDER="/home/mohan/tmp/";
 
 #Shared folder config
@@ -30,17 +39,20 @@ LOG_FILE="$LOG_FOLDER/rhel_process_$TODAY.log";
 #End Global Variables
 #
 
-#
-# Functions
-#
-#
+
+
+#  Begin All Functions
+
+
+#Simple poor mans bash logging
+
 function log {
     local level=$1;
     local msg=$2;
     local cur_time=`date +%Y/%m/%d-%r`;
     #Log into stdout if one exist and file as well
     echo "$cur_time  $level: $msg"
-    `echo "$cur_time  $level: $msg">> $LOG_FILE`;
+   `echo "$cur_time  $level: $msg">> $LOG_FILE`;
 
 }
 
@@ -61,6 +73,10 @@ function log_error {
     exit 1;
 }
 
+#End logging
+
+# Begin Assert assertions
+
 function assert_file_exist {
     local file_name=$1;
     if [ ! -f $file_name ]
@@ -68,16 +84,6 @@ function assert_file_exist {
         log_error "File does not exist $file_name"
     fi
 
-}
-function check_file_exist {
-    local file_name=$1;
-    if [ -f $file_name ]
-    then
-        echo "true";
-
-    else
-        echo "false";
-    fi
 }
 
 function assert_directory_exist {
@@ -89,10 +95,6 @@ function assert_directory_exist {
 
 }
 
-function assert_variable_exist {
-    echo "he;l"
-
-}
 function assert_host {
      local ip_addr=$1;
      #Faster way to check if host exist then
@@ -110,7 +112,33 @@ function assert_host {
      fi
 }
 
-function download_rpm
+function assert {
+          assert_directory_exist "$RHEL_SHARED_FOLDER";
+          assert_directory_exist "$LOG_FOLDER";
+          assert_directory_exist "$TMP_FOLDER";
+          assert_directory_exist "$TEST_SHARED_FOLDER";
+          assert_host "$BUILD_SERVER_HOST_NAME";
+}
+
+#End Assert functions
+
+
+#Checks if file exist
+#return true if exist else false
+function check_file_exist {
+    local file_name=$1;
+    if [ -f $file_name ]
+    then
+        echo "true";
+
+    else
+        echo "false";
+    fi
+}
+
+#Downloads rpm and text files from the buildserver
+#and copies to tmp_folder
+function download_rpm_and_text
 {
     log_info "Downloading RPM from $BUILD_SERVER_DROPIN_PATH";
     log_info " Begin WGET Log ";
@@ -126,10 +154,15 @@ function download_rpm
 
     log_info " End WGET log ";
 }
+
+#Pushes the downloaded rpm to
+#satellite server
 function push_rpm {
 
     echo "TODO"
 }
+
+# Copies the text file to shared test folder
 function copy_rpm_txt_to_test {
     local txt_file_pattern="$TMP_FOLDER/*.txt";
     local result=$(check_file_exist $txt_file_pattern);
@@ -144,10 +177,14 @@ function copy_rpm_txt_to_test {
     done;
 }
 
+#Cleans up the temp download folder
 function cleanup_temp_folder {
     log_info "Cleaning up temp folder $TMP_FOLDER "
     `rm  $TMP_FOLDER/*`
 }
+
+#Cleans up logs files if log files
+# are greater than 10 and older than 10 days
 function clean_up_log_files {
 
     log_file_count=`ls $LOG_FOLDER/*.log* |wc -l`
@@ -159,19 +196,15 @@ function clean_up_log_files {
         log_info "Skipping Clean up log files not greater than 10"
     fi
 }
+
+#1) push rpm 2) copy txt files 3)clean up folders
 function process_rpm {
     push_rpm
    copy_rpm_txt_to_test
    cleanup_temp_folder
 }
 
-function assert {
-          assert_directory_exist "$RHEL_SHARED_FOLDER";
-          assert_directory_exist "$LOG_FOLDER";
-          assert_directory_exist "$TMP_FOLDER";
-          assert_directory_exist "$TEST_SHARED_FOLDER";
-          assert_host "$BUILD_SERVER_HOST_NAME";
-}
+#End functions
 
 #Main Function Entrypoint of  the script
 function main {
@@ -179,7 +212,7 @@ function main {
     local result=$(check_file_exist "$TMP_FOLDER/*.rpm");
     echo $result;
     if [ $result == "false" ]; then
-        download_rpm
+        download_rpm_and_text
         process_rpm
     else
           log_info "File already exist in $TMP_FOLDER skipping we cannot process more than one file at a time"
