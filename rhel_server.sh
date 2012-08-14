@@ -208,6 +208,7 @@ function process_rpm {
 
 #Main Function Entrypoint of  the script
 function main {
+   log_info "-------------------------------Begin Processing ----------------------------------------";
     assert
     local result=$(check_file_exist "$TMP_FOLDER/*.rpm");
     echo $result;
@@ -218,6 +219,7 @@ function main {
           log_info "File already exist in $TMP_FOLDER skipping we cannot process more than one file at a time"
     fi
     clean_up_log_files;
+    log_info "-------------------------------End Processing ----------------------------------------"
 }
 
 # End Functions
