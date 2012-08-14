@@ -164,8 +164,17 @@ function download_rpm_and_text
 #Pushes the downloaded rpm to
 #satellite server
 function push_rpm {
+    local rpm_file_pattern="$TMP_FOLDER/*.rpm";
+    local result=$(check_file_exist $rpm_file_pattern);
+    if [ $result == "false" ]; then
+        log_warn "RPM file does not here skipping pushing rpm"
+        return 1;
+    fi;
+    for rpm_file in $rpm_file_pattern
+    do
+        log_debug " Should push rpm file but not for now $rpm_file"
 
-    echo "TODO"
+    done;
 }
 
 # Copies the text file to shared test folder
