@@ -29,8 +29,9 @@ BUILD_SERVER_DROPIN_PATH="http://$BUILD_SERVER_HOST_NAME/dropins"
 #Loggin Config
 
 #Simple log level
-# 1 -->Info
-# 2 --->Warn
+# 1 -->debug
+# 2 -->Info
+# 3 --->Warn
 # Always will log  --->ERROR
 LOG_LEVEL=1;
 TODAY=`date +%Y%m%d`;
@@ -56,14 +57,19 @@ function log {
 
 }
 
+function log_debug {
+      if [[ $LOG_LEVEL -le 1 ]];then
+        log "DEBUG" "$1";
+      fi
+}
 function log_info {
-    if [[ $LOG_LEVEL -ge 1 ]];then
+    if [[ $LOG_LEVEL -le 2 ]];then
       log "INFO" "$1";
     fi
 }
 
 function log_warn {
-    if [[ $LOG_LEVEL -le 2 ]]; then
+    if [[ $LOG_LEVEL -le 3 ]]; then
         log "WARN" "$1";
     fi
 }
@@ -140,8 +146,8 @@ function check_file_exist {
 #and copies to tmp_folder
 function download_rpm_and_text
 {
-    log_info "Downloading RPM from $BUILD_SERVER_DROPIN_PATH";
-    log_info " Begin WGET Log ";
+    log_debug "Downloading RPM from $BUILD_SERVER_DROPIN_PATH";
+    log_debug " Begin WGET Log ";
 
     #Wget  Explanation
     # -nd dont download directory
@@ -150,9 +156,9 @@ function download_rpm_and_text
     #--recursive ,--level --no-parent -->Recursively download tos one level and will not attempt to
     # download from upper level
 
-    ` wget --no-verbose --recursive --level 1 --no-parent $BUILD_SERVER_DROPIN_PATH -A rpm,txt -nc -nd -a $LOG_FILE --directory $TMP_FOLDER`
+    ` wget --quiet --recursive --level 1 --no-parent $BUILD_SERVER_DROPIN_PATH -A rpm,txt -nc -nd -a $LOG_FILE --directory $TMP_FOLDER`
 
-    log_info " End WGET log ";
+    log_debug " End WGET log ";
 }
 
 #Pushes the downloaded rpm to
@@ -172,14 +178,14 @@ function copy_rpm_txt_to_test {
     fi;
     for txt_file in $txt_file_pattern
     do
-        log_info "Copying rpm from rhel share $RHEL_SHARED_FOLDER to $TEST_SHARED_FOLDER"
+        log_debug "Copying rpm from rhel share $RHEL_SHARED_FOLDER to $TEST_SHARED_FOLDER"
         `cp $txt_file $TEST_SHARED_FOLDER`
     done;
 }
 
 #Cleans up the temp download folder
 function cleanup_temp_folder {
-    log_info "Cleaning up temp folder $TMP_FOLDER "
+    log_debug "Cleaning up temp folder $TMP_FOLDER "
     `rm  $TMP_FOLDER/*`
 }
 
@@ -193,7 +199,7 @@ function clean_up_log_files {
         `find $LOG_FOLDER -name \*log\* -mtime +10|xargs -r rm`
         log_info "End Cleaning up "
     else
-        log_info "Skipping Clean up log files not greater than 10"
+        log_debug "Skipping Clean up log files not greater than 10"
     fi
 }
 
