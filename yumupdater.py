@@ -3,6 +3,7 @@ import subprocess;
 import sys;
 import logging;
 import logging.config;
+import time;
 
 logging.config.fileConfig("yumupdater_logging.conf");
 
@@ -25,12 +26,23 @@ def execute_command(command_list):
 
 
 def main():
-    print execute_command(["service", "apache2","status"])
+    logger.debug("==========================Checking for Yum Updates==========================");
     yum = yumhelper.YumHelper("rpm-test");
-    print execute_command(["service", "apache2","status"])
     pkg = yum.get_update_package();
-    print pkg;
-    #yum.do_update(pkg);
+    if pkg :
+        logger.debug ("Found an rpm for update %s" %pkg);
+        logger.debug("Try to stop service .......");
+        print execute_command(["service", "apache2","status"])
+        logger.debug("Will wait for a minute before it tries to update....");
+        time.sleep(60);
+        logger.debug("Trying to  updating rpm");
+        yum.do_update(pkg);
+        print execute_command(["service", "apache2","status"])
+        print pkg;
+    else :
+        logger.debug("Cannot find Yum Update ....")
+    logger.debug("==========================End Checking Yum Updates==========================");
+
 
 
 if __name__ == "__main__":
