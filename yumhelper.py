@@ -1,6 +1,7 @@
 __author__ = 'mohan'
 import  yum;
 import  sys;
+import  logging;
 
 class YumHelper():
     """
@@ -25,12 +26,14 @@ class YumHelper():
         ##clear cache for every run so that
         ## we get latest copy all time
         self._yb.cleanExpireCache();
+        self._logger = logging.getLogger("YumHelper")
 
 
     def get_available_package(self):
         """
                 Get the available package
         """
+        self._logger.debug("Getting available package for : %s"%(self._rpm_name));
         return self._get_first_item_or_none(self._do_package_list('available').available);
 
 
@@ -38,6 +41,7 @@ class YumHelper():
         """
               Gets installed package
         """
+        self._logger.debug("Getting Installed package for : %s",self._rpm_name);
         return self._get_first_item_or_none(self._do_package_list('installed').installed);
 
     def get_update_package(self):
@@ -45,13 +49,16 @@ class YumHelper():
               Returns the latest version of the given package object
               for the given rpm name
         """
+        self._logger.debug("Getting update package for : %s"%(self._rpm_name));
         return self._get_first_item_or_none(self._do_package_list('updates').updates);
 
 
     def _do_package_list(self, narrow_name):
+        self._logger.debug("Calling yumbase do package list for pkgnarrow %s  with pattern : %s"%(narrow_name,self._rpm_name));
         return self._yb.doPackageLists(pkgnarrow=narrow_name, patterns=[self._rpm_name], ignore_case=True);
 
     def _get_first_item_or_none(self, list):
+        self._logger.debug("Getting available package for : %s",self._rpm_name);
         if len(list) >= 1:
             return list[0];
         else:
@@ -64,6 +71,7 @@ class YumHelper():
             Installs the  given pkg obj to your local yum repo
             requires special  permission for this operation
         """
+        self._logger.info("Installing  %s",pkg_obj)
         self._yb.doTsSetup();
         self._yb.install(pkg_obj);
         self._yb.buildTransaction();
@@ -93,11 +101,3 @@ class YumHelper():
         self._yb.processTransaction();
 
 
-def main():
-    yum = YumHelper("rpm-test");
-    pkg = yum.get_update_package();
-    yum.do_update(pkg);
-
-
-if __name__ == "__main__":
-    sys.exit(main());

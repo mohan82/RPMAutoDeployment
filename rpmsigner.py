@@ -1,11 +1,10 @@
 __author__ = 'mohan'
 
 import pexpect;
-import subprocess;
 import logging;
+import logging.config;
 import os;
 import re;
-import logging.handlers;
 import  sys;
 import fnmatch;
 import shutil;
@@ -17,19 +16,8 @@ This module depends on gpg
 #Logging Config
 #
 app_name = 'rpm_signer';
-rpm_file_name_pattern = "*.rpm"
+logging.config.fileConfig("rpmsigner_logging.conf");
 logger = logging.getLogger(app_name);
-log_file_name = '/home/mohan/logs/' + app_name + ".log"
-
-
-def init_logger():
-    #fiveMegFileSize = 5 * 1024 * 1024
-    #handler = logging.handlers.RotatingFileHandler((log_file_name), 'a', fiveMegFileSize, 5);
-    handler = logging.StreamHandler();
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler);
-    logger.setLevel(logging.INFO);
 
 
 class RPMFileNameRetriever():
@@ -106,7 +94,7 @@ class RPMProcessor:
         self._rpm_sign_timeout = rpm_sign_timeout;
         self._rpm_pass_phrase = rpm_pass_phrase;
         self._rpm_dropin = rpm_dropin;
-        self._rpm_retriever= RPMFileNameRetriever(rpm_file_info.get_file_name());
+        self._rpm_retriever = RPMFileNameRetriever(rpm_file_info.get_file_name());
 
     def sign_rpm(self, rpm_path):
         """
@@ -134,8 +122,8 @@ class RPMProcessor:
 
     def create_rpm_info_txt(self):
         rpm_info_txt = self._rpm_retriever.get_rpm_name_from_file_name();
-        rpm_info_txt_file_name = self._rpm_dropin+"/"+rpm_info_txt+".txt";
-        logger.info ("Creating text file for reference:"+rpm_info_txt_file_name);
+        rpm_info_txt_file_name = self._rpm_dropin + "/" + rpm_info_txt + ".txt";
+        logger.info("Creating text file for reference:" + rpm_info_txt_file_name);
         handle = file(rpm_info_txt_file_name, 'a');
         try:
             handle.write(self._rpm_file_info.get_file_name());
@@ -144,7 +132,7 @@ class RPMProcessor:
 
     def _run_sign_rpm(self):
         logger.info("Creating Child Process for Signing");
-        new_rpm_path = self._rpm_dropin+"/"+self._rpm_file_info.get_file_name();
+        new_rpm_path = self._rpm_dropin + "/" + self._rpm_file_info.get_file_name();
         child = self.sign_rpm(new_rpm_path)
         if not child is None:
             child.expect(pexpect.EOF);
@@ -192,7 +180,6 @@ def get_rpms(path):
 
 
 def main():
-    init_logger();
     dropin_path = "/var/www/dropins"
     rpm_pass_phrase = "mynameismohan";
     for rpm_file_info in get_rpms(sys.argv[1]):
