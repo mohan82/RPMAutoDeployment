@@ -15,8 +15,11 @@ This module depends on gpg
 """
 #Logging Config
 #
+
 app_name = 'rpm_signer';
-logging.config.fileConfig("rpmsigner_logging.conf");
+rpm_file_name_pattern = "*.rpm"
+
+logging.config.fileConfig("/home/mohan/All_Projects/PythonScripts/rpmsigner_logging.conf");
 logger = logging.getLogger(app_name);
 
 
@@ -181,7 +184,8 @@ def get_rpms(path):
 
 def main():
     dropin_path = "/var/www/dropins"
-    rpm_pass_phrase = "mynameismohan";
+    rpm_pass_phrase = sys.argv[2];
+    logger.debug("RPM Pass phrase is %s"%rpm_pass_phrase);
     for rpm_file_info in get_rpms(sys.argv[1]):
         try:
             RPMProcessor(rpm_file_info, rpm_pass_phrase, dropin_path).process_rpm();
