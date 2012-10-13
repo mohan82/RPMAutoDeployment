@@ -20,7 +20,7 @@ SLEEP_TIME = 30
 
 SERVICE_PID_PATTERN = "^.*pid.*([0-9]+).*$";
 SERVICE_RE = re.compile(SERVICE_PID_PATTERN);
-RPMS_SERVICE_TUPLE = (("rpm-test","tomcat"),("rpm-test2","tomcat"));
+RPMS_SERVICE_TUPLE = (("RPM-Test","tomcat"),("rpm-test2","tomcat"));
 
 
 def execute_command(command_list, ignoreStatusCode=False):
@@ -54,7 +54,7 @@ def is_pid_running(pid):
         if err.errno == errno.ESRCH:
             return False;
         elif err.errno == errno.EPERM:
-            raise OSError("Cannot check pid no permission");
+            raise OSError("Cannot check pid %s- permission denied"%str(pid));
         else:
             raise;
     return False;
@@ -103,9 +103,9 @@ def stop_long_running_service(name, times=4):
 
 def start_service_till_nth_time(service_name, times=4):
     for x in range(1, (times + 1)):
-        logger.debug("Trying to Stop Service for the %s th time " % str(x));
+        logger.debug("Trying to Start Service for the %s th time " % str(x));
         start_service(service_name);
-        status = check_service_status(name);
+        status = check_service_status(service_name);
         logger.debug(status);
         pid = get_pid_from_service_status(status);
         if pid:
