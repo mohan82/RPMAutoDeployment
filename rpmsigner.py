@@ -123,6 +123,7 @@ class RPMProcessor:
         """
         shutil.copy(self._rpm_file_info.get_file_path(), self._rpm_dropin);
 
+    ## Not needed anymore leaving it for reference
     def create_rpm_info_txt(self):
         rpm_info_txt = self._rpm_retriever.get_rpm_name_from_file_name();
         rpm_info_txt_file_name = self._rpm_dropin + "/" + rpm_info_txt + ".txt";
@@ -150,7 +151,6 @@ class RPMProcessor:
         logger.info("Copying RPM to given dropin path :" + self._rpm_dropin);
         self.copy_file()
         self._run_sign_rpm();
-        self.create_rpm_info_txt();
 
 
 class RPMFileInfo():

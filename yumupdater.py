@@ -11,7 +11,6 @@ import errno
 
 #Notice: you have to be root or sudoer to run
 # this script
-
 logging.config.fileConfig("yumupdater_logging.conf");
 logger = logging.getLogger("yum_updater");
 

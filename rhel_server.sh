@@ -3,11 +3,10 @@
 # This script blindly does following operations
 # 1) get all files from an apache build server,
 # 2) push all rpms from apache server them to rhel repo server
-# 3) move all the txt files from apache server to shared test folder
 #
-# It relies on the apache build server to drop correct rpms and correct
-# text files. This script is dumb enough to assume given rpms are correct
-# rpms and given text files are proper text files and process them
+# It relies on the apache build server to drop correct rpms
+# This script is dumb enough to assume given rpms are correct
+# rpms and are properly gpg signed
 
 #author:Mohan Ambalavanan
 #Date Created: 14 Aug 2012
@@ -15,12 +14,13 @@
 
 # Global variables
 TMP_FOLDER="/home/mohan/tmp/";
-
+ RPM_FILES="$TMP_FOLDER/*.rpm";
 #Shared folder config
-SHARED_FOLDER="/home/mohan/dropin_test_bed/";
-RHEL_SHARED_FOLDER="$SHARED_FOLDER/rhel_server";
-TEST_SHARED_FOLDER="$SHARED_FOLDER/test";
-LOG_FOLDER=$RHEL_SHARED_FOLDER/logs;
+LOG_FOLDER="/home/mohan/logs";
+REMOTE_DROPIN_PATH="/var/www/dropins/";
+RPM_REPO="/home/mohan/mohan-repo";
+
+
 
 #Build Server config
 BUILD_SERVER_HOST_NAME="localhost";
@@ -119,10 +119,8 @@ function assert_host {
 }
 
 function assert {
-          assert_directory_exist "$RHEL_SHARED_FOLDER";
           assert_directory_exist "$LOG_FOLDER";
           assert_directory_exist "$TMP_FOLDER";
-          assert_directory_exist "$TEST_SHARED_FOLDER";
           assert_host "$BUILD_SERVER_HOST_NAME";
 }
 
@@ -151,51 +149,52 @@ function download_rpm_and_text
 
     #Wget  Explanation
     # -nd dont download directory
-    # -A -- accept list s only rpm,txt
+    # -A -- accept list s only rpm
     # -nc dont clobber, ie stop creating rpm.1,rpm.2 if it downloads again
     #--recursive ,--level --no-parent -->Recursively download tos one level and will not attempt to
     # download from upper level
 
-    ` wget --quiet --recursive --level 1 --no-parent $BUILD_SERVER_DROPIN_PATH -A rpm,txt -nc -nd -a $LOG_FILE --directory $TMP_FOLDER`
-
+    ` wget --quiet --recursive --level 1 --no-parent $BUILD_SERVER_DROPIN_PATH -A rpm -nc -nd -a $LOG_FILE --directory $TMP_FOLDER`
     log_debug " End WGET log ";
+}
+
+function is_rpm_downloaded {
+    local result=$(check_file_exist $RPM_FILES);
+    echo $result;
 }
 
 #Pushes the downloaded rpm to
 #satellite server
 function push_rpm {
-    local rpm_file_pattern="$TMP_FOLDER/*.rpm";
-    local result=$(check_file_exist $rpm_file_pattern);
+
+    local result=$(is_rpm_downloaded);
     if [ $result == "false" ]; then
         log_warn "RPM file does not here skipping pushing rpm"
         return 1;
     fi;
-    for rpm_file in $rpm_file_pattern
+    for rpm_file in $RPM_FILES
     do
         log_debug " Should push rpm file but not for now $rpm_file"
-
+        ` cp -r  $rpm_file /home/mohan/mohan-repo `
+        log_debug " Creating repo $rpm_file"
+         log_debug "End Creating repo $rpm_file"
     done;
 }
 
-# Copies the text file to shared test folder
-function copy_rpm_txt_to_test {
-    local txt_file_pattern="$TMP_FOLDER/*.txt";
-    local result=$(check_file_exist $txt_file_pattern);
-    if [ $result == "false" ]; then
-        log_warn "Text file does not here skipping copying test"
-        return 1;
-    fi;
-    for txt_file in $txt_file_pattern
-    do
-        log_debug "Copying rpm from rhel share $RHEL_SHARED_FOLDER to $TEST_SHARED_FOLDER"
-        `cp $txt_file $TEST_SHARED_FOLDER`
-    done;
-}
 
 #Cleans up the temp download folder
 function cleanup_temp_folder {
     log_debug "Cleaning up temp folder $TMP_FOLDER "
-    `rm  $TMP_FOLDER/*`
+    `rm -f $TMP_FOLDER/*`
+}
+
+#Removes the remote rpm using ssh
+
+function remove_remote_rpm {
+    #ssh run rm -rf
+    log_debug "Removing remote rpms from $REMOTE_DROPIN_PATH"
+    `rm -f $REMOTE_DROPIN_PATH/*.rpm`
+
 }
 
 #Cleans up logs files if log files
@@ -215,7 +214,7 @@ function clean_up_log_files {
 #1) push rpm 2) copy txt files 3)clean up folders
 function process_rpm {
     push_rpm
-   copy_rpm_txt_to_test
+   remove_remote_rpm
    cleanup_temp_folder
 }
 
@@ -226,10 +225,14 @@ function main {
    log_info "-------------------------------Begin Processing ----------------------------------------";
     assert
     local result=$(check_file_exist "$TMP_FOLDER/*.rpm");
-    echo $result;
     if [ $result == "false" ]; then
-        download_rpm_and_text
-        process_rpm
+        download_rpm_and_text;
+        local rpm_downloaded=$(is_rpm_downloaded);
+         if [ $rpm_downloaded == "true" ]; then
+            process_rpm;
+        else
+            log_debug "Nothing is downloaded skipping ";
+        fi
     else
           log_info "File already exist in $TMP_FOLDER skipping we cannot process more than one file at a time"
     fi
